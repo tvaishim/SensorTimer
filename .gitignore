@@ -1,0 +1,30 @@
+# created by virtualenv automatically
+
+# Distribution / packaging
+Lib/
+Scripts/
+
+# virtualenv
+.venv
+venv/
+ENV/
+pyvenv.cfg
+__pycache__/
+
+# PyCharm IDE
+.idea/
+
+# pyinstaller
+build/
+dist/
+*.spec
+
+# production
+prod/
+make_prod.cmd
+
+# project
+*.log
+*.txt
+*.ini
+
