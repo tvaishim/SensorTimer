@@ -21,11 +21,11 @@ class MQTTListener:
         self.__client.on_connect = self.__on_connect
         self.__client.on_message = self.__on_message
         self.__client.on_disconnect = self.__on_disconnect
-        self.__client.username_pw_set(self.__app.config.mqtt_user, self.__app.config.mqtt_password)
 
     def __on_connect(self, client, userdata, flags, rc):
         if rc:
             logger.logger.error("Ошибка подключения к MQTT серверу. Код ошибки " + str(rc))
+            self.__status = MQTTStatus.off
         else:
             logger.logger.debug("MQTT connected")
             client.subscribe(self.__app.config.mqtt_topic)
@@ -33,10 +33,10 @@ class MQTTListener:
 
     def __on_message(self, client, userdata, msg):
         logger.logger.debug(f"MQTT message: {msg.topic} - {str(msg.payload)}")
-        if self.__first_message:
-            logger.logger.debug("first message")
-            self.__first_message = False
-            return
+        # if self.__first_message:
+        #     logger.logger.debug("first message")
+        #     self.__first_message = False
+        #     return
         self.__app.sensor.value = float(msg.payload)
 
     def __on_disconnect(self, client, userdata, rc):
@@ -50,12 +50,23 @@ class MQTTListener:
     def status(self):
         return self.__status
 
+    def __setting_correct(self):
+        return self.__app.config.mqtt_server and self.__app.config.mqtt_port and self.__app.config.mqtt_topic
+
     def start(self):
+        if not self.__setting_correct():
+            return
+
         if self.__status == MQTTStatus.off:
             self.__status = MQTTStatus.connection
             self.__first_message = True
-            self.__client.connect(self.__app.config.mqtt_server, self.__app.config.mqtt_port, 60)
-            self.__client.loop_start()
+            try:
+                self.__client.username_pw_set(self.__app.config.mqtt_user, self.__app.config.mqtt_password)
+                self.__client.connect(self.__app.config.mqtt_server, self.__app.config.mqtt_port, 60)
+                self.__client.loop_start()
+            except Exception as e:
+                logger.logger.error(f"Ошибка подключения к MQTT серверу - {e}")
+                self.__status = MQTTStatus.off
 
     def stop(self):
         if self.__status == MQTTStatus.on:
